@@ -1,5 +1,5 @@
 <h1 align="center" style="border-bottom: none">
-    <a href="//github.com/avyrion/avaris" target="_blank"><img alt="Avaris" src="etc/avaris.png"></a><br>Avaris Task Engine
+    <a href="//github.com/avyr-io/avaris" target="_blank"><img alt="Avaris" src="etc/avaris.png"></a><br>Avaris Task Engine
 </h1>
 
 <div align="center">
@@ -21,7 +21,7 @@ Avaris is a modular task execution and data processing engine designed for easy 
 
 ```bash
 # Clone the repository
-git clone https://github.com/avyrion/avaris.git
+git clone https://github.com/avyr-io/avaris.git
 cd avaris
 
 # Install requirements
