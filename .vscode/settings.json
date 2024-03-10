@@ -28,14 +28,14 @@
     "WORKINGDIR": "${workspaceRoot}",
     "CONFIG": "${workspaceRoot}/config",
     "DATA": "${workspaceRoot}/data",
-    "SCRAPERS": "${workspaceRoot}/scrapers",
+    "COMPENDIUM": "${workspaceRoot}/compendium",
     "LOGS": "${workspaceRoot}/logs",
     "PYTHONPATH": "${env:PYTHONPATH}:${workspaceRoot}/src:${workspaceRoot}/.avaris/src"
   },
   "terminal.integrated.env.windows": {
     "WORKINGDIR": "${workspaceRoot}",
     "CONFIG": "${workspaceRoot}\\config",
-    "SCRAPERS": "${workspaceRoot}\\scrapers",
+    "COMPENDIUM": "${workspaceRoot}\\compendium",
     "DATA": "${workspaceRoot}\\data",
     "LOGS": "${workspaceRoot}\\logs",
     "PYTHONPATH": "${env:PYTHONPATH};${workspaceRoot}\\src;${workspaceRoot}\\.avaris\\src"
@@ -43,7 +43,7 @@
   "terminal.integrated.env.osx": {
     "WORKINGDIR": "${workspaceRoot}",
     "CONFIG": "${workspaceRoot}/config",
-    "SCRAPERS": "${workspaceRoot}/scrapers",
+    "COMPENDIUM": "${workspaceRoot}/compendium",
     "DATA": "${workspaceRoot}/data",
     "LOGS": "${workspaceRoot}/logs",
     "PYTHONPATH": "${env:PYTHONPATH}:${workspaceRoot}/src:${workspaceRoot}\\.avaris\\src"

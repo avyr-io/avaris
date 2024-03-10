@@ -16,24 +16,25 @@ from avaris.data.models import Base, SQLExecutionResult
 
 class SQLDataManager(DataManager):
 
-    def __init__(self,
-                 logger: Optional[Logger] = None,
-                 database_url: str = None):
+    def __init__(self, logger: Optional[Logger] = None, database_url: str = None):
         super().__init__(logger)
         self.database_url = database_url
-        self.engine = create_async_engine(self.database_url, echo=True)
-        self.SessionLocal = sessionmaker(autocommit=False,
-                                         autoflush=False,
-                                         bind=self.engine,
-                                         class_=AsyncSession)
+        self.engine = create_async_engine(self.database_url, echo=False)
+        self.SessionLocal = sessionmaker(
+            autocommit=False,
+            autoflush=False,
+            bind=self.engine,
+            class_=AsyncSession,
+        )
 
     async def init_db(self):
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
             self.logger.info("SQL Database initialized")
 
-    async def get_slice_sql(self, from_time: datetime,
-                            to_time: datetime) -> List[SQLExecutionResult]:
+    async def get_slice_sql(
+        self, from_time: datetime, to_time: datetime
+    ) -> List[SQLExecutionResult]:
         """
         Fetches task results that were recorded within the specified time range.
 
@@ -59,8 +60,9 @@ class SQLDataManager(DataManager):
                 )
                 return []
 
-    async def get_slice(self, from_time: datetime,
-                        to_time: datetime) -> List[ExecutionResult]:
+    async def get_slice(
+        self, from_time: datetime, to_time: datetime
+    ) -> List[ExecutionResult]:
         """
         Fetches task results that were recorded within the specified time range
         and converts them to ExecutionResult objects.
@@ -74,11 +76,14 @@ class SQLDataManager(DataManager):
         """
         sql_results = await self.get_slice_sql(from_time, to_time)
         execution_results = [
-            ExecutionResult(name=result.name,
-                            task=result.task,
-                            id=result.id,
-                            timestamp=result.timestamp,
-                            result=result.result) for result in sql_results
+            ExecutionResult(
+                name=result.name,
+                task=result.task,
+                id=result.id,
+                timestamp=result.timestamp,
+                result=result.result,
+            )
+            for result in sql_results
         ]
         return execution_results
 
@@ -104,17 +109,18 @@ class SQLDataManager(DataManager):
                 )
                 # Update the existing record
                 await session.execute(
-                    update(SQLExecutionResult).where(
-                        SQLExecutionResult.id == execution_result.id).values(
-                            name=execution_result.name,
-                            task=execution_result.task,
-                            result=execution_result.result,
-                            timestamp=execution_result.timestamp,
-                        ))
+                    update(SQLExecutionResult)
+                    .where(SQLExecutionResult.id == execution_result.id)
+                    .values(
+                        name=execution_result.name,
+                        task=execution_result.task,
+                        result=execution_result.result,
+                        timestamp=execution_result.timestamp,
+                    )
+                )
                 await session.commit()
             except SQLAlchemyError as e:
-                await session.rollback(
-                )  # Ensure to roll back on other SQL errors
+                await session.rollback()  # Ensure to roll back on other SQL errors
                 self.logger.error(
                     f"Failed to add or update task result for {execution_result.task} in the SQL database: {e}"
                 )
@@ -123,7 +129,8 @@ class SQLDataManager(DataManager):
         try:
             async with self.SessionLocal() as session:
                 query = select(SQLExecutionResult).filter(
-                    SQLExecutionResult.id == job_id)
+                    SQLExecutionResult.id == job_id
+                )
                 result = await session.execute(query)
                 task_result = result.scalars().first()
                 return task_result.result if task_result else None
@@ -139,7 +146,8 @@ class SQLDataManager(DataManager):
                 return result.scalars().all()
         except SQLAlchemyError as e:
             self.logger.error(
-                f"Failed to retrieve all tasks from the SQL database: {e}")
+                f"Failed to retrieve all tasks from the SQL database: {e}"
+            )
             return []
 
     async def get_all_task_names(self) -> List[str]:

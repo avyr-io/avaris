@@ -1,17 +1,22 @@
 import os
 import signal
 from pathlib import Path
+
 import click
+
 from avaris.config.config_manager import ConfigManager
-from avaris.engine.start import start_engine
 from avaris.defaults import Defaults
+from avaris.engine.start import start_engine
+
 manager = ConfigManager()
 engine_pid_file = Path("engine.pid")  # Adjust as needed
+
 
 @click.group()
 def avaris():
     """Avaris Task Engine CLI."""
     pass
+
 
 @avaris.command()
 def init():
@@ -21,6 +26,7 @@ def init():
     # Add logic to create virtual environment and project structure
     # Spin up the virtual environment
     click.echo(f"Initialized Avaris project in {Path.cwd()}")
+
 
 @click.option(
     "-c",
@@ -32,16 +38,16 @@ def init():
     type=click.Path(),
 )
 @click.option(
-    "-s",
-    "--scraper-dir",
-    "scraper_directory",
+    "-d",
+    "--compendium-dir",
+    "compendium_directory",
     required=True,
-    help="Path to the directory containing scraper configurations.",
+    help="Path to the directory containing compendium configurations.",
 )
 @avaris.command()
-def start(config_file, scraper_directory):
+def start(config_file, compendium_directory):
     """Start the engine with the specified configuration."""
-    start_engine(config_file, scraper_directory)
+    start_engine(config_file, compendium_directory)
 
 
 @avaris.command(name="ls")

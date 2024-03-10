@@ -1,11 +1,15 @@
-from pathlib import Path
-import yaml
-from typing import List
-from avaris.config.config_loader import ConfigLoader  # Assuming this correctly loads & validates YAML
 import os
-from avaris.api.models import ScraperConfig
+from pathlib import Path
+from typing import List
+
+import yaml
 from pydantic import ValidationError
-from avaris.config.error import MissingScraperKeyError, ConfigError
+
+from avaris.api.models import Compendium
+from avaris.config.config_loader import (  # Assuming this correctly loads & validates YAML
+    ConfigLoader,
+)
+from avaris.config.error import ConfigError, NotCompendiumFileError
 from avaris.utils.logging import get_logger
 
 logger = get_logger()
@@ -13,35 +17,36 @@ logger = get_logger()
 
 class ConfigManager:
 
-    def __init__(self, scraper_config_dir: Path = None) -> None:
-        self.scraper_config_dir: Path = scraper_config_dir or Path(
-            os.getenv('CONFIG', 'config'))
-        self.scraper_config_dir: Path = scraper_config_dir or Path(
-            os.getenv('CONFIG', 'config'))
+    def __init__(self, compendium_config_dir: Path = None) -> None:
+        self.compendium_config_dir: Path = compendium_config_dir or Path(
+            os.getenv("CONFIG", "config")
+        )
+        self.compendium_config_dir: Path = compendium_config_dir or Path(
+            os.getenv("CONFIG", "config")
+        )
         self.ensure_files()
 
     def ensure_files(self) -> None:
-        self.scraper_config_dir.mkdir(parents=True, exist_ok=True)
+        self.compendium_config_dir.mkdir(parents=True, exist_ok=True)
 
     def get_all_config_files(self) -> List[Path]:
-        """Get a list of all YAML configuration files in the scraper_config_dir."""
-        return list(self.scraper_config_dir.glob('*.yaml')) + list(
-            self.scraper_config_dir.glob('*.yml'))
+        """Get a list of all YAML configuration files in the compendium_config_dir."""
+        return list(self.compendium_config_dir.glob("*.yaml")) + list(
+            self.compendium_config_dir.glob("*.yml")
+        )
 
-    def get_valid_scrapers(self) -> List[ScraperConfig]:
-        configs: List[ScraperConfig] = []
+    def get_valid_compendium(self) -> List[Compendium]:
+        configs: List[Compendium] = []
         for config_path in self.get_all_config_files():
             try:
-                loaded_config = ConfigLoader.load_scraper_config(config_path)
+                loaded_config = ConfigLoader.load_compendium_config(config_path)
                 configs.extend(loaded_config)
-            except MissingScraperKeyError as e:
+            except NotCompendiumFileError as e:
                 logger.info(f"Ignoring {config_path}: {e.message}")
             except ConfigError as e:
-                logger.error(
-                    f"Configuration error in config from {config_path}: {e}")
+                logger.error(f"Configuration error in config from {config_path}: {e}")
             except Exception as e:  # Generic catch-all for unexpected errors
-                logger.error(
-                    f"Unexpected error in config from {config_path}: {e}")
+                logger.error(f"Unexpected error in config from {config_path}: {e}")
         logger.debug(f"Loaded configurations: {configs}")
         return configs
 

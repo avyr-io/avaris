@@ -3,6 +3,8 @@ import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from colorlog import ColoredFormatter
+
 # Global logger variable
 logger = None
 
@@ -20,9 +22,9 @@ def init_logging():
         log_file_path = logs_path / f"{logger_name}.log"
 
         # Handler for writing logs to a file
-        file_handler = RotatingFileHandler(filename=str(log_file_path),
-                                           maxBytes=10000000,
-                                           backupCount=5)
+        file_handler = RotatingFileHandler(
+            filename=str(log_file_path), maxBytes=10000000, backupCount=5
+        )
         file_handler.setLevel(logging.DEBUG)
 
         # Handler for printing logs to the console
@@ -30,8 +32,19 @@ def init_logging():
         console_handler.setLevel(logging.DEBUG)
 
         # Adjusted formatter to include module names
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(module)s.%(funcName)s:%(lineno)d - %(message)s'
+        formatter = ColoredFormatter(
+            "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(module)s.%(funcName)s:\033[97m%(lineno)d\033[0m - %(message)s",
+            datefmt=None,
+            reset=True,
+            log_colors={
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "red,bg_white",
+            },
+            secondary_log_colors={},
+            style="%",
         )
 
         file_handler.setFormatter(formatter)
@@ -46,6 +59,5 @@ def get_logger(module_name=None):
     if logger is None:
         init_logging()
     if module_name:
-        return logging.getLogger(
-            f"{os.getenv('LOGGER_NAME', 'avaris')}.{module_name}")
+        return logging.getLogger(f"{os.getenv('LOGGER_NAME', 'avaris')}.{module_name}")
     return logger

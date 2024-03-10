@@ -1,12 +1,14 @@
-import yaml
-from pathlib import Path
-from avaris.task.taskmaster import TaskMaster
-from avaris.config.config_manager import ConfigManager
-from avaris.api.models import ScraperConfig
-from avaris.data.datamanager import DataManager
-from typing import List, Tuple
-from avaris.utils.logging import get_logger
 from logging import Logger
+from pathlib import Path
+from typing import List, Tuple
+
+import yaml
+
+from avaris.api.models import Compendium
+from avaris.config.config_manager import ConfigManager
+from avaris.data.datamanager import DataManager
+from avaris.task.taskmaster import TaskMaster
+from avaris.utils.logging import get_logger
 
 
 class AvarisEngineState:
@@ -16,26 +18,29 @@ class AvarisEngineState:
 
 class AvarisEngine:
 
-    def __init__(self,
-                 data_manager: DataManager,
-                 task_master: TaskMaster,
-                 scraper_config_dir: Path = None,
-                 logger: Logger = None):
+    def __init__(
+        self,
+        data_manager: DataManager,
+        task_master: TaskMaster,
+        compendium_config_dir: Path = None,
+        logger: Logger = None,
+    ):
         self.state = AvarisEngineState.STOPPED
-        self.scraper_config_dir = scraper_config_dir
+        self.compendium_config_dir = compendium_config_dir
         self.logger = logger or get_logger()
         self.task_master = task_master
         self.config_manager = ConfigManager(
-            scraper_config_dir=self.scraper_config_dir)
+            compendium_config_dir=self.compendium_config_dir
+        )
         self.data_manager = data_manager
-        self.scraper_configs: List[ScraperConfig] = []
-        self.load_scraper_configs()
+        self.compendium_configs: List[Compendium] = []
+        self.load_compendium_configs()
 
-    def load_scraper_configs(self) -> Tuple[bool, str]:
+    def load_compendium_configs(self) -> Tuple[bool, str]:
         try:
-            if self.scraper_config_dir:
-                self.scraper_configs = self.config_manager.get_valid_scrapers()
-                if not self.scraper_configs:
+            if self.compendium_config_dir:
+                self.compendium_configs = self.config_manager.get_valid_compendium()
+                if not self.compendium_configs:
                     self.logger.critical("No valid configurations found.")
                     return False, "No valid configurations"
             else:
@@ -43,18 +48,17 @@ class AvarisEngine:
                 return False, "Configuration directory not specified"
             return True, None
         except yaml.YAMLError as e:
-            self.logger.error(
-                f"Failed to load or parse engine configuration: {e}")
+            self.logger.error(f"Failed to load or parse engine configuration: {e}")
             return False, f"YAML Error: {e}"
         except Exception as e:
-            self.logger.error(
-                f"Unexpected error loading engine configuration: {e}")
+            self.logger.error(f"Unexpected error loading engine configuration: {e}")
             return False, f"Unexpected error: {e}"
 
     def dispatch(self):
         try:
             success, error = self.task_master.reconfigure_active_jobs(
-                self.scraper_configs)
+                self.compendium_configs
+            )
             if success:
                 self.logger.info("Successfully reconfigured tasks.")
                 self.task_master.reconcile()
@@ -71,7 +75,7 @@ class AvarisEngine:
             self.logger.info("Avaris is already running.")
             return True, "Already running"
         try:
-            validate_success, error = self.load_scraper_configs()
+            validate_success, error = self.load_compendium_configs()
             if validate_success:
                 self.dispatch()
             else:
@@ -79,7 +83,7 @@ class AvarisEngine:
                 return False, error
             self.task_master.start()
             self.logger.info(
-                f"Avaris started with {len(self.scraper_configs)} configs loaded."
+                f"Avaris started with {len(self.compendium_configs)} configs loaded."
             )
             self.state = AvarisEngineState.RUNNING
             return True, "OK"

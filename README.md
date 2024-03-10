@@ -27,38 +27,38 @@ cd avaris
 # Install requirements
 python -m pip install poetry
 poetry install
-python -m avaris start --config config/conf.yml --scraper-dir ./scrapers
+python -m avaris start --config config/conf.yml --compendium-dir ./compendium
 ```
 
 ## Getting Started
 
-To run Avaris, you'll need to specify your engine configuration and scraper directory. Here's a quick guide to get you started.
+To run Avaris, you'll need to specify your engine configuration and compendium directory. Here's a quick guide to get you started.
 
 ### Configuration Files
 
 Avaris requires two main types of configuration files:
 
 - **Engine Configuration (`config/conf.yml`):** Defines global settings for the Avaris avaris.engine.
-- **Scraper Configurations (`./scrapers`):** Each scraper should have its own configuration file in this directory, detailing tasks, endpoints, and data management settings.
+- **Compendium Configurations (`./compendium`):** Each compendium file should have its own configuration file in this directory, detailing tasks, endpoints, and data management settings.
 
 ### Running Avaris
 
 ```bash
-python -m avaris start --config config/conf.yml --scraper-dir ./scrapers
+python -m avaris start --config config/conf.yml --compendium-dir ./compendium
 ```
 
-Replace `config/conf.yml` and `./scrapers` with the paths to your actual engine configuration file and scraper configuration directory, respectively.
+Replace `config/conf.yml` and `./compendium` with the paths to your actual engine configuration file and compendium configuration directory, respectively.
 
 ## Examples
 
 Here are some examples of how to use Avaris for different tasks.
 
-### Defining a Scraper Configuration
+### Defining a compendium Configuration
 
 ```yaml
-# scraper_config.yml
-scraper:
-  - name: PrometheusVersionScraper
+# compendium_config.yml
+compendium:
+  - name: PrometheusVersioncompendium
     destination: local
     tasks:
       - name: FetchLatestPrometheusVersion
@@ -68,7 +68,7 @@ scraper:
           parameters:
             api_url: "https://api.github.com/repos/prometheus/prometheus/releases/latest"
 
-  - name: FluentBitVersionScraper
+  - name: FluentBitVersioncompendium
     destination: local
     tasks:
       - name: FetchLatestFluentBitVersion

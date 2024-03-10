@@ -6,7 +6,7 @@ script_path = Path(__file__).resolve()
 working_dir = script_path.parent.parent
 config = working_dir / "config"
 data = working_dir / "data"
-scrapers = working_dir / "scrapers"
+compendium = working_dir / "compendium"
 logs = working_dir / "logs"
 src = working_dir / "src"
 plugins_executors = working_dir / ".avaris" / "src"
@@ -16,7 +16,7 @@ pythonpath = f"{src}:{plugins_executors}"
 env_vars = {
     "WORKINGDIR": str(working_dir),
     "CONFIG": str(config),
-    "SCRAPERS": str(scrapers),
+    "COMPENDIUM": str(compendium),
     "DATA": str(data),
     "LOGS": str(logs),
     "SRC": str(src),
