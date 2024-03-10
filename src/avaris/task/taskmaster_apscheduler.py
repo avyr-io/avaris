@@ -1,46 +1,48 @@
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
-import pytz
-from typing import Callable
-from avaris.task.taskmaster import TaskMaster
 import asyncio
-from typing import Dict, Type
-from avaris.executor.executor import TaskExecutor
 from logging import Logger
-from avaris.utils.logging import get_logger
+from typing import Callable, Dict, Type
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import pytz
 from apscheduler.executors.asyncio import AsyncIOExecutor
 from apscheduler.executors.pool import ThreadPoolExecutor
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+
+from avaris.executor.executor import TaskExecutor
+from avaris.task.taskmaster import TaskMaster
+from avaris.utils.logging import get_logger
 
 
 class APSchedulerTaskMaster(TaskMaster):
     scheduler: BackgroundScheduler
 
-    def __init__(self,
-                 task_registry: Dict[str, Type[TaskExecutor]],
-                 logger: Logger = None,
-                 use_daemon=False,
-                 result_handler: Callable = None):
+    def __init__(
+        self,
+        task_registry: Dict[str, Type[TaskExecutor]],
+        logger: Logger = None,
+        use_daemon=False,
+        result_handler: Callable = None,
+    ):
         self.use_daemon = use_daemon
-        super().__init__(logger=logger,
-                         task_registry=task_registry,
-                         result_handler=result_handler)
+        super().__init__(
+            logger=logger, task_registry=task_registry, result_handler=result_handler
+        )
         """Create and return a BackgroundScheduler instance."""
 
     def create_scheduler(self) -> AsyncIOScheduler:
         """Create and return an AsyncIOScheduler instance."""
         executors = {
-            'default': ThreadPoolExecutor(10),  # For synchronous tasks
-            'asyncio': AsyncIOExecutor(),  # For asynchronous tasks
+            "default": ThreadPoolExecutor(10),  # For synchronous tasks
+            "asyncio": AsyncIOExecutor(),  # For asynchronous tasks
         }
         job_defaults = {
-            'coalesce': False,
-            'max_instances': 3,
+            "coalesce": False,
+            "max_instances": 3,
         }
-        scheduler = AsyncIOScheduler(executors=executors,
-                                     job_defaults=job_defaults,
-                                     timezone="UTC")
+        scheduler = AsyncIOScheduler(
+            executors=executors, job_defaults=job_defaults, timezone="UTC"
+        )
         return scheduler
 
     def start_scheduler(self):
@@ -70,7 +72,9 @@ class APSchedulerTaskMaster(TaskMaster):
                 # Remove each outdated job from the scheduler
                 for job_id in outdated_job_ids:
                     self.remove_job(job_id)
-            self.logger.info("Jobs are empty.")
+                    self.logger.info(f"Removed {job_id}.")
+            else:
+                self.logger.info("No jobs to empty.")
             return True
         except Exception as e:
             self.logger.error(f"Error clearing jobs! {e}")
@@ -86,15 +90,10 @@ class APSchedulerTaskMaster(TaskMaster):
 
         if asyncio.iscoroutinefunction(func):
             # This is an async function, schedule it with asyncio executor
-            self.scheduler.add_job(func,
-                                   trigger,
-                                   id=job_id,
-                                   executor='asyncio',
-                                   replace_existing=True)
+            self.scheduler.add_job(
+                func, trigger, id=job_id, executor="asyncio", replace_existing=True
+            )
         else:
             # This is a sync function, schedule as usual
-            self.scheduler.add_job(func,
-                                   trigger,
-                                   id=job_id,
-                                   replace_existing=True)
+            self.scheduler.add_job(func, trigger, id=job_id, replace_existing=True)
         self.scheduled_job_ids.add(job_id)

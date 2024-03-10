@@ -8,8 +8,21 @@ from avaris.registry import task_registry
 
 
 class ServiceConfig(BaseModel):
-    enabled: bool
-    port: int = Field(default=5000)
+    enabled: bool = False
+    port: int = 5000
+
+
+class DataSourceServiceConfig(ServiceConfig):
+    type: str = "default"
+
+
+class Services(BaseModel):
+    datasource: Optional[DataSourceServiceConfig] = None
+
+    # Example validator to provide a default instance if the service is None
+    @validator("datasource", pre=True, always=True)
+    def default_datasource(cls, v):
+        return v or DataSourceServiceConfig()
 
 
 class DataBackendConfig(BaseModel):
@@ -29,7 +42,7 @@ class S3Config(DataBackendConfig):
 class AppConfig(BaseModel):
     execution_backend: str
     data_backend: Union[S3Config, SQLConfig]
-    services: Dict[str, ServiceConfig] = {}
+    services: Optional[Services] = Services()
 
     @validator("data_backend", pre=True)
     def set_data_backend(cls, v: dict):

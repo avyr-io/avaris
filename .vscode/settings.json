@@ -26,7 +26,7 @@
   },
   "terminal.integrated.env.linux": {
     "WORKINGDIR": "${workspaceRoot}",
-    "CONFIG": "${workspaceRoot}/config",
+    "CONFIG": "${workspaceRoot}/config/conf.yaml",
     "DATA": "${workspaceRoot}/data",
     "COMPENDIUM": "${workspaceRoot}/compendium",
     "LOGS": "${workspaceRoot}/logs",
@@ -34,7 +34,7 @@
   },
   "terminal.integrated.env.windows": {
     "WORKINGDIR": "${workspaceRoot}",
-    "CONFIG": "${workspaceRoot}\\config",
+    "CONFIG": "${workspaceRoot}\\config\\conf.yaml",
     "COMPENDIUM": "${workspaceRoot}\\compendium",
     "DATA": "${workspaceRoot}\\data",
     "LOGS": "${workspaceRoot}\\logs",
@@ -42,7 +42,7 @@
   },
   "terminal.integrated.env.osx": {
     "WORKINGDIR": "${workspaceRoot}",
-    "CONFIG": "${workspaceRoot}/config",
+    "CONFIG": "${workspaceRoot}/config/conf.yaml",
     "COMPENDIUM": "${workspaceRoot}/compendium",
     "DATA": "${workspaceRoot}/data",
     "LOGS": "${workspaceRoot}/logs",

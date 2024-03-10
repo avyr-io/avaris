@@ -34,24 +34,23 @@ class AvarisEngine:
         )
         self.data_manager = data_manager
         self.compendium_configs: List[Compendium] = []
-        self.load_compendium_configs()
 
     def load_compendium_configs(self) -> Tuple[bool, str]:
         try:
             if self.compendium_config_dir:
                 self.compendium_configs = self.config_manager.get_valid_compendium()
                 if not self.compendium_configs:
-                    self.logger.critical("No valid configurations found.")
-                    return False, "No valid configurations"
+                    self.logger.critical("No valid compendium found.")
+                    return False, "No valid compendium"
             else:
-                self.logger.warning("No configuration directory specified.")
-                return False, "Configuration directory not specified"
+                self.logger.warning("No compendium directory specified.")
+                return False, "Compendium directory not specified"
             return True, None
         except yaml.YAMLError as e:
-            self.logger.error(f"Failed to load or parse engine configuration: {e}")
+            self.logger.error(f"Failed to load or parse compendium: {e}")
             return False, f"YAML Error: {e}"
         except Exception as e:
-            self.logger.error(f"Unexpected error loading engine configuration: {e}")
+            self.logger.error(f"Unexpected error loading compendium: {e}")
             return False, f"Unexpected error: {e}"
 
     def dispatch(self):
@@ -83,7 +82,7 @@ class AvarisEngine:
                 return False, error
             self.task_master.start()
             self.logger.info(
-                f"Avaris started with {len(self.compendium_configs)} configs loaded."
+                f"Avaris started with {len(self.compendium_configs)} compendiums and {len(self.task_master.get_job_ids())} tasks commissioned."
             )
             self.state = AvarisEngineState.RUNNING
             return True, "OK"

@@ -4,6 +4,7 @@ import json
 import os
 import re
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import pytz
@@ -142,6 +143,23 @@ def convert_from_unix_time(timestamp_unix: Optional[int]) -> Union[str, None]:
     return dt_object.strftime("%Y-%m-%d %H:%M:%S")
 
 
+def ensure_directory(path):
+    """Ensure the directory exists, create it if it doesn't, then return the path."""
+    p = Path(path)
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def find_first_existing_directory(*paths):
+    """Return the first existing directory from a list of paths, or None if none exist."""
+    for path in paths:
+        if path:
+            p = Path(path)
+            if p.is_dir():
+                return p
+    return None
+
+
 def utc_to_local_time(timestamp_str: Optional[str]) -> str:
     """
     Converts a UTC timestamp string to local time string based on the TIMEZONE environment variable.
@@ -171,6 +189,16 @@ def utc_to_local_time(timestamp_str: Optional[str]) -> str:
     local_tz = pytz.timezone(os.getenv("TIMEZONE", "UTC"))
     timestamp_local = timestamp_utc.replace(tzinfo=pytz.utc).astimezone(local_tz)
     return timestamp_local.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def find_first_existing_file(*paths):
+    """Return the first existing file path from a list of paths."""
+    for path in paths:
+        if path:
+            p = Path(path)
+            if p.exists() and p.is_file():
+                return p
+    return None
 
 
 def csv_to_json(csv_file: str, json_file: str) -> None:

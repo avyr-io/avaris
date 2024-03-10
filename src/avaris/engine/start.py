@@ -21,6 +21,7 @@ from avaris.engine.engine import AvarisEngine
 from avaris.handler.handler import ResultHandler
 from avaris.service.datasource import DataSourceService
 from avaris.service.service import Service
+from avaris.task.plugins import PluginManager
 from avaris.task.taskmaster_apscheduler import APSchedulerTaskMaster
 from avaris.utils.logging import get_logger
 
@@ -68,7 +69,11 @@ def setup_signal_handlers(
         loop.add_signal_handler(sig, lambda: asyncio.create_task(handle_signal()))
 
 
-async def main(avaris_config_path: str, compendium_config_dir: str):
+async def main(
+    avaris_config_path: str, compendium_config_dir: str, compendium_file: str
+):
+    # Config file is -f specified. Add it as extra if specified
+    logger.info(f"Using Avaris config: {avaris_config_path}")
     config = ConfigLoader.load_global_config(avaris_config_path)
     services: List[Service] = []
     loop = asyncio.get_running_loop()
@@ -78,13 +83,14 @@ async def main(avaris_config_path: str, compendium_config_dir: str):
     data_manager = await setup_data_manager(config)
 
     # Services Setup
-    if config.services["datasource"].enabled:
-        datasource_service = setup_datasource_service(config, data_manager)
-        services.append(datasource_service)
+    if config.services:
+        if config.services.datasource.enabled:
+            datasource_service = setup_datasource_service(config, data_manager)
+            services.append(datasource_service)
 
     # Avaris Engine Setup
     engine, dispatcher_task = setup_avaris_engine(
-        compendium_config_dir, data_manager, command_queue
+        compendium_config_dir, compendium_file, data_manager, command_queue
     )
 
     # Register signal handlers for graceful shutdown
@@ -106,15 +112,17 @@ async def setup_data_manager(config: AppConfig):
 
 
 def setup_datasource_service(config: AppConfig, data_manager: DataManager):
-    datasource_port = config.services["datasource"].port
-    datasource_service = DataSourceService(
-        data_manager=data_manager, port=datasource_port, logger=logger
-    )
+    datasource_port = config.services.datasource.port or 5000
+    datasource_service = DataSourceService(data_manager=data_manager,
+                                           port=datasource_port,
+                                           logger=logger)
     asyncio.create_task(datasource_service.start())
     return datasource_service
 
 
-def setup_avaris_engine(compendium_config_dir, data_manager, command_queue):
+def setup_avaris_engine(
+    compendium_config_dir, compendium_file, data_manager, command_queue
+):
     result_handler = ResultHandler(data_manager=data_manager, logger=logger)
     task_master = APSchedulerTaskMaster(
         logger=logger,
@@ -125,7 +133,7 @@ def setup_avaris_engine(compendium_config_dir, data_manager, command_queue):
     engine = AvarisEngine(
         data_manager=data_manager,
         task_master=task_master,
-        compendium_config_dir=Path(compendium_config_dir),
+        compendium_config_dir=[Path(compendium_config_dir), compendium_file],
         logger=logger,
     )
     dispatcher_task = asyncio.create_task(command_dispatcher(engine, command_queue))
@@ -143,38 +151,26 @@ def import_package_modules():
             __import__(full_module_name)
 
 
-def import_plugin_modules(plugins_dir: Path):
-    if plugins_dir not in sys.path:
-        sys.path.append(str(plugins_dir))
-    for path in plugins_dir.glob("**/*.py"):
-        if path.name == "__init__.py":
-            continue
-        module_path = f"plugins.executor.{path.stem}"
-        try:
-
-            importlib.import_module(module_path)
-            logger.info(f"Successfully imported {module_path}")
-        except ModuleNotFoundError as e:
-            logger.error(f"Failed to import {module_path}: {e}")
-
-
 def start_engine(
     avaris_config_file: str,
-    compendium_config_directory: str,
+    compendium_directory: str = None,
+    compendium_file: str = None,
     plugins_directory: str = None,
 ):
     import_package_modules()
-    avaris_config_file = (
+    avaris_config_path = (
         Path(avaris_config_file) if Path(avaris_config_file).exists() else None
     )
-    plugins_dir = Path(
-        plugins_directory if plugins_directory else Path.cwd() / ".avaris" / "src"
-    )
+    if not avaris_config_path:
+        logger.warning(f"Avaris config not found in {avaris_config_file}")
+    plugins_dir = (
+        Path(plugins_directory) or Defaults.DEFAULT_PLUGINS_DIR
+    )  # Might have to rework to use lists
     if plugins_dir:
         logger.info(f"Using plugins directory: {plugins_dir}")
     if plugins_dir.exists():
-        import_plugin_modules(plugins_dir)
-    asyncio.run(main(avaris_config_file, compendium_config_directory))
+        PluginManager.import_plugin_modules(plugins_dir)
+    asyncio.run(main(avaris_config_path, compendium_directory, compendium_file))
 
 
 if __name__ == "__main__":

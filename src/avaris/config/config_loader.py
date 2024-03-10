@@ -5,7 +5,7 @@ import yaml
 from pydantic import ValidationError
 
 from avaris.api.models import AppConfig, Compendium, CompendiumWrapper
-from avaris.config.error import ConfigError, NotCompendiumFileError
+from avaris.config.error import ConfigError
 from avaris.defaults import Defaults
 from avaris.utils.logging import get_logger
 
@@ -38,6 +38,7 @@ class ConfigLoader:
                 try:
                     return AppConfig(**config_data)
                 except ValidationError as e:
+                    logger.error(f"Invalid Avaris configuration in {file_path}: {e}")
                     raise ConfigError(
                         f"Invalid Avaris configuration in {file_path}: {e}"
                     )
@@ -46,7 +47,7 @@ class ConfigLoader:
                 raise ConfigError(f"No configuration found {file_path}: {e}")
         else:
             logger.warning(
-                f"No configuration file provided {file_path}, using defaults..."
+                f"No configuration file provided{f' {file_path}' if file_path else '.'} Using defaults..."
             )
             config_data = yaml.safe_load(Defaults.DEFAULT_CONF)
             return AppConfig(**config_data)

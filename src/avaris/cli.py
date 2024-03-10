@@ -3,13 +3,14 @@ import signal
 from pathlib import Path
 
 import click
+from avaris.defaults import Defaults
 
 from avaris.config.config_manager import ConfigManager
-from avaris.defaults import Defaults
 from avaris.engine.start import start_engine
 
 manager = ConfigManager()
 engine_pid_file = Path("engine.pid")  # Adjust as needed
+
 
 
 @click.group()
@@ -18,22 +19,28 @@ def avaris():
     pass
 
 
+@click.argument('path', type=click.Path(), required=False)
 @avaris.command()
-def init():
+def init(path):
     """Initialize a new Avaris project and virtual environment."""
-    project_dir = Path.cwd() / ".avaris"
-    project_dir.mkdir(exist_ok=True)
-    # Add logic to create virtual environment and project structure
-    # Spin up the virtual environment
-    click.echo(f"Initialized Avaris project in {Path.cwd()}")
+    project_dir = Path(path) if path else Path.cwd(
+    ) / ".avaris" / "src" / "plugins" / "executor"
+    project_dir.mkdir(parents=True, exist_ok=True)
 
+    (project_dir / "__init__.py").touch()
+    (project_dir.parent / "__init__.py").touch()  # For 'plugins' directory
+    (project_dir.parent.parent / "__init__.py").touch()  # For 'src' directory
+
+    click.echo(f"Initialized Avaris project in {project_dir}")
 
 @click.option(
     "-c",
     "--config",
     "config_file",
-    default=lambda: Defaults.DEFAULT_CONF_PATH.as_posix(),
-    required=True,
+    default=(
+        Defaults.DEFAULT_CONF_FILE.as_posix() if Defaults.DEFAULT_CONF_FILE else None
+    ),
+    required=False,
     help="Path to the engine configuration YAML file.",
     type=click.Path(),
 )
@@ -41,13 +48,42 @@ def init():
     "-d",
     "--compendium-dir",
     "compendium_directory",
-    required=True,
+    required=False,  # No longer strictly required
+    default=None,
     help="Path to the directory containing compendium configurations.",
+    type=click.Path(),
+)
+@click.option(
+    "-f",
+    "--compendium-file",
+    "compendium_file",
+    required=False,
+    default=None,
+    help="Path to a single compendium configuration file.",
+    type=click.Path(),
+)
+@click.option(
+    "-p",
+    "--plugins-dir",
+    "plugins_directory",
+    required=False,
+    default=(Defaults.DEFAULT_PLUGINS_DIR if Defaults.DEFAULT_PLUGINS_DIR else None),
+    help="Path to the directory containing plugin modules. Defaults to $PWD/.avaris/plugins",
+    type=click.Path(),
 )
 @avaris.command()
-def start(config_file, compendium_directory):
-    """Start the engine with the specified configuration."""
-    start_engine(config_file, compendium_directory)
+def start(config_file, compendium_directory, compendium_file, plugins_directory):
+    """
+    Start the engine with the specified configuration.
+    You must specify either a compendium directory or a compendium file.
+    Optionally, you can specify a plugins directory.
+    """
+    if not compendium_directory and not compendium_file:
+        raise click.UsageError(
+            "You must specify either a compendium directory or a compendium file."
+        )
+
+    start_engine(config_file, compendium_directory, compendium_file, plugins_directory)
 
 
 @avaris.command(name="ls")
@@ -69,3 +105,6 @@ def stop():
         click.echo("AvarisEngine stopped.")
     else:
         click.echo("AvarisEngine is not running.")
+
+def entrypoint(args):
+    avaris(args)
