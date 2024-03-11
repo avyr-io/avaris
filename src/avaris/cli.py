@@ -24,12 +24,17 @@ def avaris():
 def init(path):
     """Initialize a new Avaris project and virtual environment."""
     project_dir = Path(path) if path else Path.cwd(
-    ) / ".avaris" / "src" / "plugins" / "executor"
-    project_dir.mkdir(parents=True, exist_ok=True)
-
-    (project_dir / "__init__.py").touch()
-    (project_dir.parent / "__init__.py").touch()  # For 'plugins' directory
-    (project_dir.parent.parent / "__init__.py").touch()  # For 'src' directory
+    )
+    compendium_dir = project_dir / "compendium"
+    compendium_dir.mkdir(parents=True, exist_ok=True)
+    #os.environ["WORKINGDIR"] = project_dir.as_posix()
+    #os.environ["COMPENDIUM"] = compendium_dir.as_posix()
+    executor_dir = project_dir / ".avaris" / "src" / "plugins" / "executor"
+    executor_dir.mkdir(parents=True, exist_ok=True)
+    Path.cwd()
+    (executor_dir / "__init__.py").touch()
+    (executor_dir.parent / "__init__.py").touch()  # For 'plugins' directory
+    (executor_dir.parent.parent / "__init__.py").touch()  # For 'src' directory
 
     click.echo(f"Initialized Avaris project in {project_dir}")
 

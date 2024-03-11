@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field, HttpUrl, SecretStr, root_validator, validator
+from pydantic import BaseModel, Field, HttpUrl, SecretStr, root_validator, validator, ValidationError
 
 from avaris.defaults import Defaults, Names
 from avaris.registry import task_registry
-
+from avaris.utils.logging import get_logger
+logger = get_logger()
 
 class ServiceConfig(BaseModel):
     enabled: bool = False
@@ -79,10 +80,17 @@ class TaskExecutorConfig(BaseModel):
         if task_type and task_type in task_registry:
             executor_class = task_registry[task_type]
             parameters_model = executor_class.PARAMETER_TYPE
-            return parameters_model(**v)
+            try:
+                # Ensure v is not None by providing an empty dict if necessary
+                parameters_data = v or {}
+                return parameters_model(**parameters_data)
+            except ValidationError as e:
+                logger.warning(
+                    f"Parameter validation error for task {task_type}: {e}")
+                return None  # Return None or an empty instance of parameters_model
         else:
-            raise ValueError(f"Unsupported task type: {task_type}, did it register?")
-
+            raise ValueError(
+                f"Unsupported task type: {task_type}. Did it register?")
 
 class TaskConfig(BaseModel):
     name: Optional[str] = None
@@ -92,10 +100,21 @@ class TaskConfig(BaseModel):
 
 
 class Compendium(BaseModel):
-    destination: Optional[Union[HttpUrl, str]] = None
     name: Optional[str] = None
-    tasks: List[TaskConfig]
+    tasks: List[TaskConfig] = []
 
+    @validator('tasks', pre=True)
+    def validate_tasks(cls, v):
+        validated_tasks = []
+        for task_data in v:
+            try:
+                # Attempt to create a TaskConfig instance for each task
+                task = TaskConfig(**task_data)
+                validated_tasks.append(task)
+            except ValidationError as e:
+                # Log the validation error and continue to the next task
+                logger.warning(f"Validation error in task: {e}")
+        return validated_tasks
 
 class CompendiumWrapper(BaseModel):
     compendium: List[Compendium]

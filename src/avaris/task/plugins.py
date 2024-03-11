@@ -12,7 +12,9 @@ class PluginManager:
     def import_plugin_modules(plugins_dir: Path):
         # Assuming plugins_dir is already in sys.path
         if plugins_dir not in sys.path:
-            sys.path.append(str(plugins_dir))
+            print(plugins_dir)
+            sys.path.append(str(plugins_dir.absolute()))
+            sys.path.append(str((plugins_dir / "src").absolute()))
         for path in plugins_dir.glob("**/*.py"):
             if path.name == "__init__.py" or not path.is_file():
                 continue  # Skip if it's __init__.py or if for any reason it's not a file.

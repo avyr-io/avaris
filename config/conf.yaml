@@ -3,6 +3,6 @@ data_backend:
   backend: sqlite
   database_url:
 services:
-  # datasource:
-  #   enabled: true
-  #   port: 5000
+  datasource:
+    enabled: true
+    port: 5000

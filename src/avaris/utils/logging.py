@@ -2,7 +2,7 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-
+from avaris.defaults import Defaults
 from colorlog import ColoredFormatter
 
 # Global logger variable
@@ -12,21 +12,12 @@ logger = None
 def init_logging():
     global logger
     if logger is None:
+        debug_mode = os.getenv("DEBUG", "").lower() in ["true", "1"]
         logger_name = os.getenv("LOGGER_NAME", "avaris")
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.INFO)
 
-        logs_path = Path(os.getenv("LOGS", Path.cwd() / "logs"))
-        if not logs_path.is_dir():
-            logs_path.mkdir(parents=True, exist_ok=True)
-        log_file_path = logs_path / f"{logger_name}.log"
 
-        # Handler for writing logs to a file
-        file_handler = RotatingFileHandler(
-            filename=str(log_file_path), maxBytes=10000000, backupCount=5
-        )
-        file_handler.setLevel(logging.DEBUG)
-        debug_mode = os.getenv("DEBUG", "").lower() in ["true", "1"]
 
         formatter = ColoredFormatter(
             fmt=(
@@ -53,11 +44,20 @@ def init_logging():
 
         # Adjusted formatter to include module names
 
-        file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
 
         # Adding both handlers to the logger
-        logger.addHandler(file_handler)
+        if debug_mode:
+
+            log_file_path = Defaults.DEFAULT_LOG_FILE
+
+            # Handler for writing logs to a file
+            file_handler = RotatingFileHandler(
+                filename=str(log_file_path), maxBytes=10000000, backupCount=5
+            )
+            file_handler.setFormatter(formatter)
+            file_handler.setLevel(logging.DEBUG)
+            logger.addHandler(file_handler)
         logger.addHandler(console_handler)
 
 

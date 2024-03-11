@@ -20,7 +20,7 @@ class Defaults:
     # Attempt to determine the correct configuration file path
     DEFAULT_WORKINGDIR = (
         Path(os.getenv("WORKINGDIR")) or DEFAULT_HOME_DIR or CWD)
-    
+
     DEFAULT_WORKINGDIR.mkdir(parents=True, exist_ok=True)
     # For directories, we ensure they exist or create them if they don't
     DEFAULT_DATA_DIR = ensure_directory(
@@ -38,12 +38,15 @@ class Defaults:
 
     DEFAULT_PLUGINS_DIR = (
         find_first_existing_directory(
-            DEFAULT_WORKINGDIR / "plugins",
-            DEFAULT_HOME_DIR / "plugins",
+            DEFAULT_WORKINGDIR / ".avaris",
+            DEFAULT_HOME_DIR / ".avaris",
         )
-        or DEFAULT_WORKINGDIR / "plugins"
+        or DEFAULT_WORKINGDIR / ".avaris"
     )
-
+    DEFAULT_LOG_FILE = find_first_existing_file(
+        os.getenv("LOGS"), CWD / "avaris.log", DEFAULT_HOME_DIR / "avaris.log",
+        Path("/") / "var" / "lib" / "etc" / "avaris" /
+        "avaris.log") or CWD / "avaris.log"
     @classmethod
     def print_all(cls):
         for attr, value in cls.__dict__.items():
