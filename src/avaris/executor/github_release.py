@@ -1,7 +1,7 @@
 import re
 import httpx
-from pydantic import BaseModel, HttpUrl,SecretStr
-from typing import  Optional
+from pydantic import BaseModel, HttpUrl, SecretStr
+from typing import Optional
 from avaris.executor.executor import TaskExecutor
 from avaris.task.task_registry import register_task_executor
 
@@ -16,6 +16,7 @@ class GitHubReleaseRequestParameters(BaseModel):
 @register_task_executor(GitHubReleaseRequestParameters.__NAME__)
 class GitHubReleaseExecutor(TaskExecutor[GitHubReleaseRequestParameters]):
     PARAMETER_TYPE = GitHubReleaseRequestParameters
+
     async def execute(self) -> dict:
         try:
             secrets = await self.load_secrets()
@@ -27,8 +28,7 @@ class GitHubReleaseExecutor(TaskExecutor[GitHubReleaseRequestParameters]):
                 if github_token:
                     headers[
                         "Authorization"] = f"token {github_token.get_secret_value()}"
-                    response = await client.get(url,
-                                                headers=headers)
+                    response = await client.get(url, headers=headers)
                 elif self.parameters.username and self.parameters.password:
                     auth = (self.parameters.username,
                             self.parameters.password.get_secret_value())
@@ -36,8 +36,7 @@ class GitHubReleaseExecutor(TaskExecutor[GitHubReleaseRequestParameters]):
                                                 headers=headers,
                                                 auth=auth)
                 else:
-                    response = await client.get(url,
-                                                headers=headers)
+                    response = await client.get(url, headers=headers)
 
             if response.status_code == 200:
                 data = response.json()
@@ -45,15 +44,15 @@ class GitHubReleaseExecutor(TaskExecutor[GitHubReleaseRequestParameters]):
                     "v")  # Remove leading 'v' if present
                 release_date = data.get("published_at",
                                         "").split("T")[0]  # YYYY-MM-DD format
-
+                release_notes_url = data.get("html_url", "")
                 # Extract repository name
-                match = re.search(r"/repos/([^/]+/[^/]+)/releases/latest",
-                                  url)
+                match = re.search(r"/repos/([^/]+/[^/]+)/releases/latest", url)
                 repository_name = match.group(1) if match else "Unknown"
 
                 return {
                     "name": repository_name,
                     "latest_version": version_tag,
+                    "release_notes": release_notes_url,
                     "release_date": release_date
                 }
 
