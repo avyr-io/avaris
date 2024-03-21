@@ -7,9 +7,9 @@ from avaris.data.datamanager import DataManager
 from avaris.utils.logging import get_logger
 import multiprocessing
 from typing import List
-from avaris.api.models import ExecutionResult
-
-
+from avaris.api.models import ExecutionResult, ListenerData
+from avaris.utils.parse import generate_task_id
+import traceback
 class UvicornServer(multiprocessing.Process):
 
     def __init__(self, config: Config):
@@ -30,7 +30,10 @@ class DataSourceService(Service):
     def __init__(self,
                  data_manager: DataManager,
                  port: int = 5000,
-                 logger: Logger = None):
+                 logger: Logger = None,
+                 listen: bool = False):
+        self.listen = listen
+
         self.data_manager = data_manager
         self.port = port
         self.logger = logger or get_logger()
@@ -43,6 +46,8 @@ class DataSourceService(Service):
                              log_level="info",
                              loop="asyncio")
         self.server = UvicornServer(config=self.config)
+        if self.listen:
+            self.logger.info("Listening enabled. Payloads to /push will be pushed to database.")
 
     def setup_routes(self):
 
@@ -97,11 +102,31 @@ class DataSourceService(Service):
                 self.logger.error(f"Error querying Data Source: {e}")
                 return {"error": f"Error querying Data Source: {e}"}
 
-        @self.app.post("/annotations")
-        async def annotations():
-            # Implement if you need annotations feature
-            # This should return a list of annotations.
-            return []
+        @self.app.post("/push")
+        async def push(request: Request):
+            if self.listen:
+                try:
+                    req_body = await request.json()
+                    header = dict(request.headers)
+                    result = ListenerData(body=req_body,
+                        header=header,
+                    )
+                    task_name = "_".join(header.keys())
+                    await self.data_manager.add_task_result(ExecutionResult(
+                        name=f"push_{task_name}",
+                        task="listener_enabled",
+                        id=generate_task_id(compendium_name="listener",task_name=task_name,parameters=result),
+                        timestamp=datetime.now(),
+                        result=req_body
+                    ))
+                except Exception as e:
+                    self.logger.error(f"Error parsing request body: {e}")
+                    self.logger.error(f"{traceback.format_exc()}")
+                    return {"error": f"Error parsing request body: {e}"}
+                return {"status": "ok"}
+            else:
+                return {"status": "listening is disabled"}
+
 
         @self.app.get("/health")
         async def health_check():

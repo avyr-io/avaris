@@ -12,7 +12,7 @@ class DataManager(ABC):
         self.logger = logger or get_logger()
 
     @abstractmethod
-    async def add_task_result(self, job_id: str, data: dict) -> None:
+    async def add_task_result(self, execution_result: ExecutionResult) -> None:
         raise NotImplementedError()
 
     @abstractmethod

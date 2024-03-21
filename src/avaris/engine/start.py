@@ -115,7 +115,8 @@ def setup_datasource_service(config: AppConfig, data_manager: DataManager):
     datasource_port = config.services.datasource.port or 5000
     datasource_service = DataSourceService(data_manager=data_manager,
                                            port=datasource_port,
-                                           logger=logger)
+                                           logger=logger,
+                                           listen=config.services.datasource.listen)
     asyncio.create_task(datasource_service.start())
     return datasource_service
 

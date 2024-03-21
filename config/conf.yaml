@@ -6,3 +6,4 @@ services:
   datasource:
     enabled: true
     port: 5000
+    listen: true

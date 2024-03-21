@@ -10,21 +10,19 @@ logger = get_logger()
 
 class ServiceConfig(BaseModel):
     enabled: bool = False
-    port: int = 5000
-
 
 class DataSourceServiceConfig(ServiceConfig):
     type: str = "default"
+    port: int = 5000
+    listen: bool = False
 
 
 class Services(BaseModel):
     datasource: Optional[DataSourceServiceConfig] = None
-
     # Example validator to provide a default instance if the service is None
     @validator("datasource", pre=True, always=True)
     def default_datasource(cls, v):
         return v or DataSourceServiceConfig()
-
 
 class DataBackendConfig(BaseModel):
     backend: str
@@ -125,3 +123,9 @@ class CompendiumWrapper(BaseModel):
         if isinstance(v, dict):  # Single compendium case
             return [v]  # Wrap it in a list
         return v  # It's already a list
+
+
+
+class ListenerData(BaseModel):
+    body: dict
+    header: dict

@@ -81,7 +81,7 @@ def generate_task_id(
     :param parameters: A dictionary of task parameters.
     :return: A unique task ID.
     """
-    params_string = str(sorted(parameters.model_dump().items())) if parameters else ""
+    params_string = str([compendium_name,task_name]+sorted(parameters.model_dump().items())) if parameters else ""
 
     # Create a hash of the parameters string
     params_hash = hashlib.sha256(params_string.encode()).hexdigest()[
@@ -89,7 +89,7 @@ def generate_task_id(
     ]  # Take first 8 chars for brevity
 
     # Concatenate elements to form the ID
-    task_id = f"{compendium_name}_{task_name}_{params_hash}"
+    task_id = f"{params_hash}"
 
     return task_id
 
