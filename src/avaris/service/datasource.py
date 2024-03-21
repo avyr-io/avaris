@@ -1,7 +1,7 @@
 from datetime import datetime
 from logging import Logger
 from avaris.service.service import Service
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException, Depends
 from uvicorn import Config, Server
 from avaris.data.datamanager import DataManager
 from avaris.utils.logging import get_logger
@@ -9,6 +9,8 @@ import multiprocessing
 from typing import List
 from avaris.api.models import ExecutionResult, ListenerData
 from avaris.utils.parse import generate_task_id
+from avaris.utils.auth import validate_signature
+from avaris.defaults import Names
 import traceback
 class UvicornServer(multiprocessing.Process):
 
@@ -103,29 +105,30 @@ class DataSourceService(Service):
                 return {"error": f"Error querying Data Source: {e}"}
 
         @self.app.post("/push")
-        async def push(request: Request):
-            if self.listen:
-                try:
-                    req_body = await request.json()
-                    header = dict(request.headers)
-                    result = ListenerData(body=req_body,
-                        header=header,
-                    )
-                    task_name = "_".join(header.keys())
-                    await self.data_manager.add_task_result(ExecutionResult(
-                        name=f"push_{task_name}",
-                        task="listener_enabled",
-                        id=generate_task_id(compendium_name="listener",task_name=task_name,parameters=result),
-                        timestamp=datetime.now(),
-                        result=req_body
-                    ))
-                except Exception as e:
-                    self.logger.error(f"Error parsing request body: {e}")
-                    self.logger.error(f"{traceback.format_exc()}")
-                    return {"error": f"Error parsing request body: {e}"}
-                return {"status": "ok"}
-            else:
+        async def push(request: Request,
+                       valid: bool = Depends(validate_signature)):
+            if not self.listen:
                 return {"status": "listening is disabled"}
+            try:
+                req_body = await request.json()
+                header = dict(request.headers)
+                result = ListenerData(body=req_body,
+                    header=header,
+                )
+                task_name = "_".join(header.keys())
+                await self.data_manager.add_task_result(ExecutionResult(
+                    name=f"push_{task_name}",
+                    task=Names.LISTENER_TASK,
+                    id=generate_task_id(compendium_name="",task_name=task_name,parameters=result),
+                    timestamp=datetime.now(),
+                    result=req_body
+                ))
+            except Exception as e:
+                self.logger.error(f"Error parsing request body: {e}")
+                self.logger.error(f"{traceback.format_exc()}")
+                return {"error": f"Error parsing request body: {e}"}, 400
+            return {"status": "ok"}
+
 
 
         @self.app.get("/health")

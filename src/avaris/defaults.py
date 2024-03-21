@@ -12,7 +12,7 @@ class Names:
     COMPENDIUM_IDENTIFIER = "compendium"
     SQLITE = "sqlite"
     S3 = "s3"
-
+    LISTENER_TASK= "listener_task"
 
 class Defaults:
     CWD=Path.cwd()
@@ -70,6 +70,10 @@ class Defaults:
         or DEFAULT_WORKINGDIR / "compendium"
     )
     DEFAULT_COMPENDIUM_DIR.mkdir(parents=True, exist_ok=True)
+
+
+class Secrets:
+    LISTENER_KEY = os.getenv("LISTENER_KEY") or None
 
 
 if __name__ == "__main__":
