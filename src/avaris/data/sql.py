@@ -105,7 +105,7 @@ class SQLDataManager(DataManager):
             except IntegrityError:
                 await session.rollback()  # Roll back the failed transaction
                 self.logger.info(
-                    f"Unique constraint failed for {execution_result.id}, updating existing record."
+                    f"Found existing {execution_result.task}[{execution_result.id}], updating record."
                 )
                 # Update the existing record
                 await session.execute(
