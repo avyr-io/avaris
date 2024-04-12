@@ -1,0 +1,35 @@
+compendium:
+  name: PrometheusVersionScraper
+  tasks:
+    - name: FetchLatestPrometheusVersion
+      schedule: "* * * * *"
+      executor:
+        task: http_get_github_release
+        parameters:
+          api_url: "https://api.github.com/repos/prometheus/prometheus/releases/latest"
+        secrets:
+          GITHUB_TOKEN:
+    - name: FetchLatestFluentBitVersion
+      schedule: "* * * * *"
+      executor:
+        task: http_get_github_release
+        parameters:
+          api_url: "https://api.github.com/repos/fluent/fluent-bit/releases/latest"
+        secrets:
+          GITHUB_TOKEN:
+    - name: FetchLatestECKVersion
+      schedule: "* * * * *"
+      executor:
+        task: http_get_github_release
+        parameters:
+          api_url: "https://api.github.com/repos/elastic/cloud-on-k8s/releases/latest"
+        secrets:
+          GITHUB_TOKEN:
+    - name: FetchLatestElasticsearchVersion
+      schedule: "* * * * *"
+      executor:
+        task: http_get_github_release
+        parameters:
+          api_url: "https://api.github.com/repos/elastic/elasticsearch/releases/latest"
+        secrets:
+          GITHUB_TOKEN:
