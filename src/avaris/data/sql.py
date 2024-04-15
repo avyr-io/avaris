@@ -127,30 +127,41 @@ class SQLDataManager(DataManager):
                 )
 
 
+
+
     async def get_filtered_tasks(self, **kwargs):
         async with self.SessionLocal() as session:
             query = select(SQLExecutionResult)
 
             conditions = []
             for key, value in kwargs.items():
-                if hasattr(SQLExecutionResult, key) and value is not None:
-                    if isinstance(value, list) and value:  # Check if the value is a non-empty list
-                        condition = getattr(SQLExecutionResult, key).in_(value)
-                    else:
-                        condition = getattr(SQLExecutionResult, key) == value
+                if hasattr(SQLExecutionResult, key):
+                    if value is not None:
+                        if isinstance(value, list):
+                            if value:  # Only add if list is not empty
+                                condition = getattr(SQLExecutionResult,
+                                                    key).in_(value)
+                                conditions.append(condition)
+                        else:
+                            # Normal condition for non-list type with a non-None value
+                            condition = getattr(SQLExecutionResult, key) == value
+                            conditions.append(condition)
 
-                    if key == "start_date":
+                    # Special handling for date ranges
+                    if key == "start_date" and value is not None:
                         condition = SQLExecutionResult.timestamp >= value
-                    elif key == "end_date":
+                        conditions.append(condition)
+                    elif key == "end_date" and value is not None:
                         condition = SQLExecutionResult.timestamp <= value
+                        conditions.append(condition)
 
-                    conditions.append(condition)
-
+            # Apply filters if any conditions are created
             if conditions:
                 query = query.filter(and_(*conditions))
 
             results = await session.execute(query)
             return results.scalars().all()
+
 
 
     async def get_task_result(self, job_id: str):
