@@ -88,7 +88,8 @@ class SQLDataManager(DataManager):
         ]
         return execution_results
 
-    async def add_task_result(self, execution_result: ExecutionResult):
+
+    async def add_task_result(self, execution_result: ExecutionResult) -> bool:
         async with self.SessionLocal() as session:
             try:
                 db_task_result = SQLExecutionResult(
@@ -103,30 +104,38 @@ class SQLDataManager(DataManager):
                 self.logger.info(
                     f"Task result for {execution_result.task} added to the SQL database"
                 )
+                return True
             except IntegrityError:
                 await session.rollback()  # Roll back the failed transaction
                 self.logger.info(
                     f"Found existing {execution_result.task}[{execution_result.id}], updating record."
                 )
-                # Update the existing record
-                await session.execute(
-                    update(SQLExecutionResult)
-                    .where(SQLExecutionResult.id == execution_result.id)
-                    .values(
-                        name=execution_result.name,
-                        task=execution_result.task,
-                        result=execution_result.result,
-                        timestamp=execution_result.timestamp,
+                try:
+                    # Update the existing record
+                    await session.execute(
+                        update(SQLExecutionResult)
+                        .where(SQLExecutionResult.id == execution_result.id)
+                        .values(
+                            name=execution_result.name,
+                            task=execution_result.task,
+                            result=execution_result.result,
+                            timestamp=execution_result.timestamp,
+                        )
                     )
-                )
-                await session.commit()
+                    await session.commit()
+                    return True
+                except SQLAlchemyError as e:
+                    self.logger.error(
+                        f"Failed to update task result for {execution_result.task} in the SQL database: {e}"
+                    )
+                    await session.rollback()  # Ensure to roll back on update failure
+                    return False
             except SQLAlchemyError as e:
-                await session.rollback()  # Ensure to roll back on other SQL errors
                 self.logger.error(
-                    f"Failed to add or update task result for {execution_result.task} in the SQL database: {e}"
+                    f"Failed to add task result for {execution_result.task} in the SQL database: {e}"
                 )
-
-
+                await session.rollback()  # Ensure to roll back on other SQL errors
+                return False
 
 
     async def get_filtered_tasks(self, **kwargs):
