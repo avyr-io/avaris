@@ -6,7 +6,6 @@ import pytz
 from apscheduler.executors.asyncio import AsyncIOExecutor
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from avaris.executor.executor import TaskExecutor
@@ -15,7 +14,7 @@ from avaris.utils.logging import get_logger
 
 
 class APSchedulerTaskMaster(TaskMaster):
-    scheduler: BackgroundScheduler
+    scheduler: AsyncIOScheduler
 
     def __init__(
         self,
@@ -38,7 +37,7 @@ class APSchedulerTaskMaster(TaskMaster):
         }
         job_defaults = {
             "coalesce": False,
-            "max_instances": 3,
+            "max_instances": 1,
         }
         scheduler = AsyncIOScheduler(
             executors=executors, job_defaults=job_defaults, timezone="UTC"
