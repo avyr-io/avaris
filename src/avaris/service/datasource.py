@@ -6,7 +6,7 @@ from uvicorn import Config, Server
 from avaris.data.datamanager import DataManager
 from avaris.utils.logging import get_logger
 import multiprocessing
-from typing import List
+from typing import List, Optional
 from fastapi import Query
 from avaris.api.models import ExecutionResult, ListenerData
 from avaris.utils.parse import generate_task_id
@@ -138,13 +138,20 @@ class DataSourceService(Service):
         async def health_check():
             return {"status": "ok"}
 
+
+
+
+
+
         @self.app.get("/tasks")
         async def get_filtered_tasks(
-            id: str = Query(None, description="Filter tasks by ID"),
-            name: str = Query(None, description="Filter tasks by name"),
-            task: str = Query(None, description="Filter tasks by task type"),
-            start_date: datetime = Query(None, description="Start date for task filter (ISO 8601 format)"),
-            end_date: datetime = Query(None, description="End date for task filter (ISO 8601 format)"),
+            id: Optional[str] = Query(None, description="Filter tasks by ID"),
+            name: Optional[str] = Query(None, description="Filter tasks by name"),
+            task: List[str] = Query([], description="Filter tasks by task type"),
+            start_date: Optional[datetime] = Query(
+                None, description="Start date for task filter (ISO 8601 format)"),
+            end_date: Optional[datetime] = Query(
+                None, description="End date for task filter (ISO 8601 format)"),
         ):
             # Prepare the filtering criteria as a dictionary
             filter_criteria = {

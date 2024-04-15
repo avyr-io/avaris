@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "avaris"
-version = "0.2.0"
+version = "0.2.1"
 description = "Task execution engine for data management and monitoring"
 authors = ["dennis <denngohis@gmail.com>"]
 license = "Apache License 2.0"

@@ -126,6 +126,7 @@ class SQLDataManager(DataManager):
                     f"Failed to add or update task result for {execution_result.task} in the SQL database: {e}"
                 )
 
+
     async def get_filtered_tasks(self, **kwargs):
         async with self.SessionLocal() as session:
             query = select(SQLExecutionResult)
@@ -133,10 +134,11 @@ class SQLDataManager(DataManager):
             conditions = []
             for key, value in kwargs.items():
                 if hasattr(SQLExecutionResult, key) and value is not None:
-                    # Use the '==' operator for most fields
-                    condition = getattr(SQLExecutionResult, key) == value
+                    if isinstance(value, list) and value:  # Check if the value is a non-empty list
+                        condition = getattr(SQLExecutionResult, key).in_(value)
+                    else:
+                        condition = getattr(SQLExecutionResult, key) == value
 
-                    # Special handling for date range queries
                     if key == "start_date":
                         condition = SQLExecutionResult.timestamp >= value
                     elif key == "end_date":
@@ -149,6 +151,7 @@ class SQLDataManager(DataManager):
 
             results = await session.execute(query)
             return results.scalars().all()
+
 
     async def get_task_result(self, job_id: str):
         try:
