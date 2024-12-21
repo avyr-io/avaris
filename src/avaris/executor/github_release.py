@@ -1,8 +1,10 @@
 import re
+from typing import Optional
+
 import httpx
 from pydantic import HttpUrl, SecretStr
+
 from avaris.api.models import BaseParameter
-from typing import Optional
 from avaris.executor.executor import TaskExecutor
 from avaris.task.task_registry import register_task_executor
 
@@ -32,20 +34,22 @@ class GitHubReleaseExecutor(TaskExecutor[GitHubReleaseRequestParameters]):
                     headers["Authorization"] = f"token {github_token}"
                     response = await client.get(url, headers=headers)
                 elif self.parameters.username and self.parameters.password:
-                    auth = (self.parameters.username,
-                            self.parameters.password.get_secret_value())
-                    response = await client.get(url,
-                                                headers=headers,
-                                                auth=auth)
+                    auth = (
+                        self.parameters.username,
+                        self.parameters.password.get_secret_value(),
+                    )
+                    response = await client.get(url, headers=headers, auth=auth)
                 else:
                     response = await client.get(url, headers=headers)
 
             if response.status_code == 200:
                 data = response.json()
                 version_tag = data.get("tag_name", "").strip(
-                    "v")  # Remove leading 'v' if present
-                release_date = data.get("published_at",
-                                        "").split("T")[0]  # YYYY-MM-DD format
+                    "v"
+                )  # Remove leading 'v' if present
+                release_date = data.get("published_at", "").split("T")[
+                    0
+                ]  # YYYY-MM-DD format
                 release_notes_url = data.get("html_url", "")
                 # Extract repository name
                 match = re.search(r"/repos/([^/]+/[^/]+)/releases/latest", url)
@@ -55,7 +59,7 @@ class GitHubReleaseExecutor(TaskExecutor[GitHubReleaseRequestParameters]):
                     "name": repository_name,
                     "latest_version": version_tag,
                     "release_notes": release_notes_url,
-                    "release_date": release_date
+                    "release_date": release_date,
                 }
 
             else:
