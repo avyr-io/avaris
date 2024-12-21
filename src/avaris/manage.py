@@ -1,9 +1,10 @@
-import requests
 from pathlib import Path
+
+import requests
 
 
 def get_secret_key(engine_pid):
-    key_path = Path.home() / 'avaris' / 'instances' / engine_pid / 'secret.key'
+    key_path = Path.home() / "avaris" / "instances" / engine_pid / "secret.key"
     with open(key_path) as key_file:
         return key_file.read()
 
@@ -14,10 +15,11 @@ def send_command_to_engine(engine_pid, command_data):
     response = requests.post(
         f"https://localhost:5001/command?secret={secret_key}",
         json=command_data,
-        verify=False)
+        verify=False,
+    )
     print(response.json())
 
 
 # Example command usage
-engine_pid = '12345'  # Example PID; in practice, discover or let the user specify this
+engine_pid = "12345"  # Example PID; in practice, discover or let the user specify this
 send_command_to_engine(engine_pid, {"action": "start_scraping"})
